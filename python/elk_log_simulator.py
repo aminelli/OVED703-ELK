@@ -49,7 +49,7 @@ class ElkLogSimulator:
             print(f"🔑 Autenticazione tramite API Key")
         elif username and password:
             self.es = Elasticsearch(
-                [f"http://{host}:{port}"],
+                [f"https://{host}:{port}"],
                 basic_auth=(username, password)
             )
             print(f"🔐 Autenticazione tramite Username/Password")
@@ -104,10 +104,14 @@ class ElkLogSimulator:
         }
         
         # Aggiungi dettagli in caso di errore
-        if status == "ko":
+        if status == "KO":
+            choice = random.choice([400, 401, 403, 404, 500, 502, 503])
             log["error_message"] = random.choice(error_messages)
-            log["error_code"] = random.choice([400, 401, 403, 404, 500, 502, 503])
+            log["error_code"] = choice
+            log["http_status"] = choice
         else:
+            log["error_message"] = "N.A."
+            log["error_code"] = 200
             log["http_status"] = 200
         
         return log
@@ -266,7 +270,7 @@ class ElkLogSimulator:
 def main():
     """Funzione principale per demo"""
     # Configurazione connessione (modifica questi parametri)
-    HOST = "20.105.91.235"
+    HOST = "127.0.0.1"
     PORT = 9200
     
     # Opzione 1: Autenticazione con Username/Password
@@ -276,7 +280,7 @@ def main():
     # Opzione 2: Autenticazione con API Key (alternativa a username/password)
     # Formato: "id:api_key" o "base64_encoded_key"
     API_KEY = None  # Es: "VnVhQ2ZHY0JDZGJrUW0tZTVhT3g6dWkybHAyYXhUTm1zeWFrdzl0dk5udw=="
-    API_KEY = "WFJINUlwd0JaSG8xX01GRm9XenE6cGo2RHN4eFJ1YUw0bXdMTHBnLUtfdw=="
+    API_KEY = "OGNzNTg1NEJDWEhqWnc4SmJHS1o6OUYxQ3ZyYVdScnpnSEc5SUZsVFF6dw=="
     
     # Crea il simulatore (usa API_KEY se impostato, altrimenti USERNAME/PASSWORD)
     simulator = ElkLogSimulator(
@@ -292,7 +296,8 @@ def main():
     print(f"\nIndice corrente: {current_index}\n")
     
     # Genera e invia 50 log (usa automaticamente il pattern services-log-AAAA-MM)
-    simulator.simulate_and_send(count=50000, use_bulk=True)
+    while True:
+        simulator.simulate_and_send(count=100, use_bulk=False)
     
     # Attendi un momento per permettere l'indicizzazione
     time.sleep(2)
